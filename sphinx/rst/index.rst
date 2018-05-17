@@ -1,4 +1,4 @@
-Welcome to Project1's documentation!
+Welcome to P2EE's documentation!
 ====================================
 
 .. toctree::
