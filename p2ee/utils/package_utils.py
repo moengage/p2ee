@@ -3,6 +3,8 @@ import os
 import requests
 import sys
 
+from p2ee.utils.environment import Environment
+
 
 class PackageUtils(object):
     INSTANCE_META = None
@@ -25,30 +27,30 @@ class PackageUtils(object):
     }
 
     @classmethod
-    def getExecutionEnv(cls):
+    def get_execution_env(cls):
         if not cls.EXECUTION_ENV:
             try:
-                env = open(os.path.join(cls.getConfigLocalBaseFolder(), 'moe_env')).read().strip() or 'prod'
+                env = open(os.path.join(cls.get_config_local_base_folder(), 'moe_env')).read().strip() or 'prod'
             except IOError:
-                env = os.environ.get('MOE_DEPLOYMENT_ENV') or 'prod'
-            cls.EXECUTION_ENV = env
+                env = os.environ.get('P2EE_DEPLOYMENT_ENV') or 'prod'
+            cls.EXECUTION_ENV = Environment.from_str(env)
         return cls.EXECUTION_ENV
 
     @classmethod
-    def getConfigLocalBaseFolder(cls):
-        return sys.prefix if cls.isVirtualEnv() else '/etc'
+    def get_config_local_base_folder(cls):
+        return sys.prefix if cls.is_virtual_env() else '/etc'
 
     @classmethod
-    def isLambdaEnv(cls):
+    def is_lambda_env(cls):
         valid_lambda_envs = ["AWS_Lambda_python2.7", "AWS_Lambda_python3.6"]
         return os.environ.get("AWS_EXECUTION_ENV") in valid_lambda_envs
 
     @classmethod
-    def isVirtualEnv(cls):
+    def is_virtual_env(cls):
         return hasattr(sys, 'real_prefix')
 
     @classmethod
-    def getInstanceMeta(cls):
+    def get_instance_meta(cls):
         if not PackageUtils.INSTANCE_META:
             try:
                 response = requests.get('http://instance-data/latest/dynamic/instance-identity/document')

@@ -5,13 +5,12 @@ from bson.objectid import ObjectId
 
 
 class DictUtils(object):
-
     @classmethod
-    def deepMergeDictionaries(cls, dict_source, dict_to_merge):
+    def deep_merge_dictionaries(cls, dict_source, dict_to_merge):
         for key in dict_to_merge:
             if key in dict_source:
                 if isinstance(dict_source[key], dict) and isinstance(dict_to_merge[key], dict):
-                    dict_source[key] = cls.deepMergeDictionaries(dict_source[key], dict_to_merge[key])
+                    dict_source[key] = cls.deep_merge_dictionaries(dict_source[key], dict_to_merge[key])
                 else:
                     dict_source[key] = dict_to_merge[key]
             else:
