@@ -1,5 +1,5 @@
 import inspect
-import p2ee.threading
+import threading
 
 
 def get_default_args(func):
@@ -21,7 +21,7 @@ class NamedInstanceMetaClass(type):
         instance_name_arg = dictionary.pop('INSTANCE_NAME_INIT_ARG', None)
         super(NamedInstanceMetaClass, cls).__init__(cls, bases, dictionary)
         cls._instances = {}
-        cls._instance_lock = p2ee.threading.Lock()
+        cls._instance_lock = threading.Lock()
         cls._default_init_args = get_default_args(dictionary.get('__init__'))
         cls._instance_name_init_arg = instance_name_arg
         if len(cls.__mro__) > 1:
