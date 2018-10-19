@@ -79,7 +79,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'scripts', 'build', 'dist']),
     package_data={
-        'p2ee': ['workers/config/*.conf*', 'workers/config/*.ini*', 'workers/config/worker_*', 'workers/config/beat_*'],
+        'p2ee': ['loggers/config.json'],
         '': ['VERSION']
     },
 
@@ -106,9 +106,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'p2ee_worker = p2ee.workers.manager:main',
-            'p2ee_worker_beat = p2ee.workers.manager:beat_main',
-            'p2eeconfgen = p2ee.config_manager.config_generator:main'
+            # 'p2ee_worker = p2ee.workers.manager:main',
+            # 'p2ee_worker_beat = p2ee.workers.manager:beat_main',
+            # 'p2ee_confgen = p2ee.config_manager.config_generator:main'
         ]
     }
 )
