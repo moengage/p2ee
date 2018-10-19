@@ -1,4 +1,4 @@
-from p2ee.singleton import SingletonMetaClass
+from p2ee.threading.singleton import SingletonMetaClass
 
 
 class LogConfigProvider(object):
@@ -6,10 +6,10 @@ class LogConfigProvider(object):
 
     def __init__(self):
         from p2ee.utils.common_utils import CommonUtils
-        self.config = CommonUtils.readPackageResourceJson(__name__, 'config.json')
+        self.config = CommonUtils.read_package_resource_json(__name__, 'config.json')
 
     def __str__(self):
-        return "MoEngage - Log Config Provider"
+        return "P2EE - Log Config Provider"
 
     def get_logging_config(self):
         return self.config.get('logging', {})

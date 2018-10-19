@@ -1,0 +1,12 @@
+{
+  "logging": {
+    "log_level": 20,
+    "allowed_domains": [
+      "p2ee"
+    ],
+    "log_directory": {
+      "owner": "ubuntu",
+      "group": "ubuntu"
+    }
+  }
+}

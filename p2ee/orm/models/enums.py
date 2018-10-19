@@ -18,8 +18,8 @@ class StringEnum(Enum):
             return str(self.value)
 
     @classmethod
-    def fromStr(cls, value):
-        return cls.value_to_member_map().get(value)
+    def from_str(cls, value, default=None):
+        return cls.value_to_member_map().get(value, default)
 
     @classmethod
     def all_enums(cls):

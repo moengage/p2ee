@@ -25,18 +25,16 @@ class InvalidFieldException(Exception):
 
 class InvalidFieldValueException(Exception):
     def __init__(self, message='Invalid field value', field=None, value=None):
-        if field is not None:
-            message = "{field}: {message}".format(field=field,
-                                                  message=message).strip(':').strip(' ')
-
-        super(InvalidFieldValueException, self).__init__(message)
+        error_message = "{field} - {message} : {value}" if field else "{message} : {value}"
+        super(InvalidFieldValueException, self).__init__(error_message.format(field=field, message=message,
+                                                                              value=repr(value)))
 
     def get_message(self):
         return self.message
 
 
 class InvalidFieldDefinition(Exception):
-    def __init__(self, message='Invalid field definition', field=None):
+    def __init__(self, message='Invalid Field Definition', field=None):
         self.field = field
         super(InvalidFieldDefinition, self).__init__(message + ': ' + str(field))
 

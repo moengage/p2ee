@@ -1,20 +1,19 @@
 import datetime
 import logging.handlers
 import os
+import sys
 import threading
 import traceback
-import sys
 from threading import Lock
 
-from p2ee.orm.models.enum_type import StringEnum
-from p2ee.utils.package_utils import PackageUtils
-from p2ee.orm.models.base.fields import IntField, EnumField, StringField
-from p2ee.singleton import NamedInstanceMetaClass
-from p2ee.utils.loggers.provider import LogConfigProvider
-from p2ee.orm.models.base import SimpleSchemaDocument
-from p2ee.utils.context.thread import ThreadContext
-from p2ee.utils.context import GLOBAL_CONTEXT
+from p2ee.loggers.provider import LogConfigProvider
+from p2ee.orm.models.base import SimpleSchemaDocument, StringField, IntField, EnumField
+from p2ee.orm.models.enums import StringEnum
+from p2ee.threading.singleton import NamedInstanceMetaClass
+from p2ee.threading.context import GLOBAL_CONTEXT, ThreadContext
 from p2ee.utils.common_utils import CommonUtils
+from p2ee.utils.environment import Environment
+from p2ee.utils.package_utils import PackageUtils
 
 
 class LogFormat(StringEnum):
@@ -40,19 +39,21 @@ class LoggingConfig(SimpleSchemaDocument):
 
     @staticmethod
     def get_domain_from_log_type(domain):
-        return domain.split('.')[0]
+        d = domain.split('.')[0]
+        if d in LogConfigProvider().get_domains():
+            return d
 
     def get_logging_base_path(self):
-        if PackageUtils.isVirtualEnv():
+        if PackageUtils.is_virtual_env():
             log_folder_path = sys.prefix
-        elif PackageUtils.isLambdaEnv():
+        elif PackageUtils.is_lambda_env():
             log_folder_path = '/var/task'
         else:
             log_folder_path = '/var/log'
         return os.path.join(log_folder_path, 'treysor')
 
     def get_file_path(self):
-        if self.file_path is None:
+        if not self.file_path:
             self.file_path = "{base_path}/{domain}/{pid}.log".format(
                 base_path=self.get_logging_base_path(),
                 domain=str(self.domain),
@@ -82,9 +83,9 @@ class Treysor(object):
         with cls.SETUP_LOCK:
             formatter = logging.Formatter(logging_config.log_format.get_formatter())
             logger.setLevel(logging_config.log_level)
-            if not PackageUtils.isLambdaEnv():
+            if not PackageUtils.is_lambda_env():
                 log_file_path = logging_config.get_file_path()
-                CommonUtils.ensure_folder_path(log_file_path, 0o776, owner=LogConfigProvider().get_log_dir_owner(),
+                CommonUtils.ensure_folder_path(log_file_path, 0o777, owner=LogConfigProvider().get_log_dir_owner(),
                                                group=LogConfigProvider().get_log_dir_group())
 
                 for handler in logger.handlers:
@@ -94,7 +95,7 @@ class Treysor(object):
                 file_handler.setFormatter(formatter)
                 logger.addHandler(file_handler)
 
-            if CommonUtils.getEnv() != 'prod' or PackageUtils.isLambdaEnv():
+            if CommonUtils.get_execution_env() != Environment.PROD or PackageUtils.is_lambda_env():
                 stream_handler = logging.StreamHandler()
                 stream_handler.setFormatter(formatter)
                 logger.addHandler(stream_handler)
@@ -153,25 +154,25 @@ class Treysor(object):
         :return:
         """
         message = ""
-        # The parameter `3` to `getFunctionCallerInfo` indicates the nesting level of the _getframe call made.
+        # The parameter `3` to `get_function_caller_info` indicates the nesting level of the _getframe call made.
         # _getframe returns the frame `n` levels above the current frame (from where _getframe is called)
-        # In our case _getframe is called inside getFunctionCallerInfo. This call to _getframe is 3 levels nested
+        # In our case _getframe is called inside get_function_caller_info. This call to _getframe is 3 levels nested
         # wrt to the point where the log statement was actually added.
-        # The 3 nesting levels are -> treysor().info --> __get_log_message --> getFunctionCallerInfo --> _getframe
+        # The 3 nesting levels are -> treysor().info --> __get_log_message --> get_function_caller_info --> _getframe
         if self.logging_config.log_format == LogFormat.TEXT:
-            caller_info = CommonUtils.getFunctionCallerInfo(3)
+            caller_info = CommonUtils.get_function_caller_info(3)
             line_info = ""
             if 'func_call_info' in caller_info:
                 file_info = caller_info['func_call_info'].split('@')
                 if len(file_info) >= 2:
                     line_info = file_info[1]
-            message += "[" + CommonUtils.convertCodePathToDotNotation(line_info) + ": " + \
-                      threading.currentThread().name + "] " + kwargs.get('treysor_log_msg', "") + \
-                      "\n" + kwargs.get("exception", "")
+            message += "[" + CommonUtils.convert_code_path_to_dot_notation(line_info) + ": " + \
+                       threading.currentThread().name + "] " + kwargs.get('treysor_log_msg', "") + \
+                       "\n" + kwargs.get("exception", "")
         else:
             # Get logging function's info
             if self._logger.getEffectiveLevel() > logging.INFO:
-                log_dict = CommonUtils.getFunctionCallerInfo(3)
+                log_dict = CommonUtils.get_function_caller_info(3)
             else:
                 log_dict = dict()
             # Add current context to log_message
@@ -256,6 +257,10 @@ class Treysor(object):
     @property
     def domain(self):
         return self.logging_config.domain
+
+    @property
+    def log_type(self):
+        return self.logging_config.log_type
 
     def update_logging_config(self, logging_config):
         self._logger = self.setup_logger(logging_config)

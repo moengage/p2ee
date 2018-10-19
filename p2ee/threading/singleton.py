@@ -1,6 +1,7 @@
 import inspect
 import threading
 
+
 def get_default_args(func):
     """
     returns a dictionary of arg_name:default_values for the input function
@@ -12,7 +13,7 @@ def get_default_args(func):
     return dict()
 
 
-DEFAULT_INSTANCE_NAME_KEY = 'DEFAULT_INSTANCE_NAME'
+DEFAULT_INSTANCE_NAME_KEY = 'P2EE_DEFAULT_INSTANCE_NAME'
 
 
 class NamedInstanceMetaClass(type):
@@ -31,14 +32,27 @@ class NamedInstanceMetaClass(type):
             except AttributeError:
                 pass
 
-    def __call__(cls, *args, **kwargs):
+    def _get_instance_name(cls, *args, **kwargs):
         # Access instance_name from kwargs if passed. If missing in kwargs,
         # access it from default values specified in __init__. If not found in default values, use arg[0],
         # if everything else fails, call it default_instance
-        instance_name_key = cls._instance_name_init_arg or DEFAULT_INSTANCE_NAME_KEY
         # instance name is popped from the kwargs, so that it will not get passed down to implemented classes.
-        instance_name = kwargs.pop(DEFAULT_INSTANCE_NAME_KEY, None) or kwargs.get(cls._instance_name_init_arg) or\
-                        cls._default_init_args.get(instance_name_key, args[0] if args else 'default_instance')
+
+        instance_name_key = cls._instance_name_init_arg or DEFAULT_INSTANCE_NAME_KEY
+        if kwargs.get('default_instance_name'):
+            instance_name = kwargs.get('default_instance_name')
+        elif cls._instance_name_init_arg in kwargs:
+            instance_name = kwargs.get(cls._instance_name_init_arg)
+        elif len(args) > 0:
+            instance_name = args[0]
+        else:
+            instance_name = cls._default_init_args.get(instance_name_key, 'default_instance')
+        return instance_name
+
+    def __call__(cls, *args, **kwargs):
+        default_instance_name = kwargs.pop(DEFAULT_INSTANCE_NAME_KEY, None)
+        instance_name = cls._get_instance_name(*args, default_instance_name=default_instance_name, **kwargs)
+
         if instance_name not in cls._instances:
             with cls._instance_lock:
                 if instance_name not in cls._instances:

@@ -1,5 +1,10 @@
+import os
+import socket
 import threading
 from weakref import WeakKeyDictionary
+
+from p2ee.utils.common_utils import CommonUtils
+from p2ee.utils.package_utils import PackageUtils
 
 
 class ThreadContext(object):
@@ -47,3 +52,16 @@ class ThreadContext(object):
 
     def to_dict(self):
         return self.__get_thread_context()
+
+
+GLOBAL_CONTEXT = {
+    'corr_id': CommonUtils.generate_random_string(6),
+    'pid': str(os.getpid()),
+    'host': socket.gethostbyname(socket.gethostname()),
+    'env': PackageUtils.get_execution_env(),
+    'region': PackageUtils.get_instance_meta()['region'],
+    'inst_id': PackageUtils.get_instance_meta()['instanceId']
+}
+
+
+EXECUTION_CONTEXT = ThreadContext(**GLOBAL_CONTEXT)
